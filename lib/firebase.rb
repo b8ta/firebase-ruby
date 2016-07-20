@@ -1,6 +1,6 @@
 require 'firebase/response'
 require 'firebase/server_value'
-require 'httpclient'
+require 'httparty'
 require 'json'
 require 'uri'
 
@@ -13,13 +13,14 @@ module Firebase
         raise ArgumentError.new('base_uri must be a valid https uri')
       end
       base_uri += '/' unless base_uri.end_with?('/')
-      @request = HTTPClient.new({
-        :base_url => base_uri,
-        :default_header => {
+      headers = {
           'Content-Type' => 'application/json'
         }
-      })
-      @auth = auth
+      if auth.present?
+        headers['Authorization'] = "Bearer #{auth}"
+      end
+      @base_uri = base_uri
+      @headers = headers
     end
 
     # Writes and returns the data
@@ -53,10 +54,10 @@ module Firebase
     private
 
     def process(verb, path, data=nil, query={})
-      Firebase::Response.new @request.request(verb, "#{path}.json", {
-        :body             => (data && data.to_json),
-        :query            => (@auth ? { :auth => @auth }.merge(query) : query),
-        :follow_redirect  => true
+      Firebase::Response.new HTTParty.send(verb, "#{@base_uri}#{path}.json", {
+        body:  (data && data.to_json),
+        query: query,
+        headers: @headers
       })
     end
   end
