@@ -15,11 +15,11 @@ module Firebase
     end
 
     def success?
-      [200, 204].include? response.status
+      [200, 204].include? response.code
     end
 
     def code
-      response.status
+      response.code
     end
   end
 end
